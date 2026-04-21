@@ -11,8 +11,10 @@ from sklearn.metrics import accuracy_score, classification_report
 def clean_text(text):
     if pd.isna(text):
         return ""
-    text = text.lower()
-    text = re.sub(r'[^a-zA-Z]', '', text)
+    text = str(text).lower()
+    text = re.sub(r"http\S+", "", text)
+    text = re.sub(r'[^a-zA-Z]', "", text)
+    text = re.sub(r"\s+", " ", text).strip()
     return text
 
 df = pd.read_csv("data.csv")
@@ -24,7 +26,11 @@ df['cleaned'] = df.iloc[:, 3].apply(clean_text)
 y = df.iloc[:, 2]  # Sentiment in column 2 ('Positive' etc.)
 
 # convert text to numbers (Vectorization) - using TF-IDF
-vectorizer = TfidfVectorizer(max_features=5000)
+vectorizer = TfidfVectorizer(
+    max_features=10000,
+    ngram_range=(1,2),
+    stop_words='english'
+    )
 X = vectorizer.fit_transform(df['cleaned']).toarray()
 
 # Train-Test Split
@@ -33,7 +39,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # model training - Logistic Regression
-model = LogisticRegression()
+model = LogisticRegression(max_iter=2000, class_weight='balanced')
 model.fit(X_train, y_train)
 
 # model evaluation (good accuracy: 80-90%)
@@ -48,7 +54,9 @@ def predict_sentiment(text):
     vectorized = vectorizer.transform([text]).toarray()
     return model.predict(vectorized)[0]
 
-print(predict_sentiment("This product is amazing"))
+print(predict_sentiment("This product is amazing")) # positive
+print(predict_sentiment("This game is terrible")) # negative
+print(predict_sentiment("The update is okay")) # neutral
 
 # save the model
 pickle.dump(model, open("model.pkl", "wb"))

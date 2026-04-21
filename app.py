@@ -5,8 +5,9 @@ model = pickle.load(open("model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
 def predict(text):
-    vec = vectorizer.transform().toarray()
-    return model.predict(vec)[text][0]
+    vec = vectorizer.transform([user_input]).toarray()
+    prediction = model.predict(vec)
+    return prediction
 
 st.title("Sentiment Analysis App")
 
