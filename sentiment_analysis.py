@@ -9,17 +9,23 @@ from sklearn.metrics import accuracy_score, classification_report
 
 # data processing
 def clean_text(text):
+    if pd.isna(text):
+        return ""
     text = text.lower()
     text = re.sub(r'[^a-zA-Z]', '', text)
     return text
 
 df = pd.read_csv("data.csv")
-df['cleaned'] = df['Text'].apply(clean_text)
 
-# convert text 'n numbers (Vectorization) - using TF-IDF
+# remove rows with empty text
+df = df.dropna(subset=[df.columns[3]])
+
+df['cleaned'] = df.iloc[:, 3].apply(clean_text)
+y = df.iloc[:, 2]  # Sentiment in column 2 ('Positive' etc.)
+
+# convert text to numbers (Vectorization) - using TF-IDF
 vectorizer = TfidfVectorizer(max_features=5000)
 X = vectorizer.fit_transform(df['cleaned']).toarray()
-y = df['Sentiment']
 
 # Train-Test Split
 X_train, X_test, y_train, y_test = train_test_split(
@@ -39,8 +45,8 @@ print(classification_report(y_test, y_pred))
 # test with custom input
 def predict_sentiment(text):
     text = clean_text(text)
-    vactor = vectorizer.transform().toarray()
-    return model.predict(vactor)[text][0]
+    vectorized = vectorizer.transform([text]).toarray()
+    return model.predict(vectorized)[0]
 
 print(predict_sentiment("This product is amazing"))
 
